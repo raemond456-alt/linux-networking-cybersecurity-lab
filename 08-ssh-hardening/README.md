@@ -660,5 +660,251 @@ Next planned step:
 
 \* Test key-based authentication again before disabling password authentication.
 
+\## Password Authentication Hardening
+
+
+
+After disabling root SSH login, password-based SSH authentication was reviewed and hardened.
+
+
+
+\### Initial Configuration
+
+
+
+The effective SSH configuration initially showed:
+
+
+
+```text
+
+passwordauthentication yes
+
+```
+
+
+
+This meant users could still authenticate to SSH using passwords.
+
+
+
+\### Configuration Change
+
+
+
+The following setting was changed in `/etc/ssh/sshd\_config`:
+
+
+
+```text
+
+PasswordAuthentication no
+
+```
+
+
+
+During the first validation attempt, a typo was detected:
+
+
+
+```text
+
+unsupported option "n0"
+
+```
+
+
+
+The configuration was corrected from `n0` to `no`.
+
+
+
+\### Configuration Validation
+
+
+
+The SSH configuration was tested before reloading the service:
+
+
+
+```bash
+
+sudo sshd -t
+
+```
+
+
+
+No output was returned, indicating that the configuration syntax was valid.
+
+
+
+The effective configuration was then checked:
+
+
+
+```bash
+
+sudo sshd -T | grep '^passwordauthentication'
+
+```
+
+
+
+Result:
+
+
+
+```text
+
+passwordauthentication no
+
+```
+
+
+
+\### Reloading SSH
+
+
+
+The SSH service was reloaded safely:
+
+
+
+```bash
+
+sudo systemctl reload ssh
+
+```
+
+
+
+The effective configuration was checked again and confirmed:
+
+
+
+```text
+
+passwordauthentication no
+
+```
+
+
+
+\### Final Hardening Verification
+
+
+
+The final SSH authentication settings were verified with:
+
+
+
+```bash
+
+sudo sshd -T | grep -E '^(permitrootlogin|passwordauthentication|pubkeyauthentication|kbdinteractiveauthentication)'
+
+```
+
+
+
+Result:
+
+
+
+```text
+
+permitrootlogin no
+
+pubkeyauthentication yes
+
+passwordauthentication no
+
+kbdinteractiveauthentication no
+
+```
+
+
+
+This confirms that:
+
+
+
+\* Root SSH login is disabled.
+
+\* Password-based SSH authentication is disabled.
+
+\* Public-key authentication remains enabled.
+
+\* Keyboard-interactive authentication is disabled.
+
+
+
+\### SSH Service Verification
+
+
+
+The SSH listening ports were checked with:
+
+
+
+```bash
+
+sudo ss -tulpn | grep ':22'
+
+```
+
+
+
+SSH was confirmed to be listening on port 22 for both IPv4 and IPv6.
+
+
+
+The service status was also checked:
+
+
+
+```bash
+
+sudo systemctl status ssh --no-pager
+
+```
+
+
+
+The service was confirmed to be:
+
+
+
+```text
+
+Active: active (running)
+
+```
+
+
+
+The SSH logs also confirmed successful ED25519 public-key authentication:
+
+
+
+```text
+
+Accepted publickey for raymond-favour
+
+```
+
+
+
+\### Final Status
+
+
+
+SSH hardening was successfully completed and verified.
+
+
+
+The server now uses key-based authentication while root login and password-based SSH authentication are disabled.
+
 
 
